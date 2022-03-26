@@ -1,0 +1,54 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: checkoutservice
+  annotations:
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+    run.googleapis.com/launch-stage: BETA
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: '50'
+        run.googleapis.com/execution-environment: gen2
+        autoscaling.knative.dev/maxScale: '1000'
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 600
+      containers:
+      - image: gcr.io/google-samples/microservices-demo/checkoutservice:v0.3.6
+        # readinessProbe:
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:5050"]
+        # livenessProbe:
+        #   exec:
+        #     command: ["/bin/grpc_health_probe", "-addr=:5050"]
+        ports:
+        - name: h2c
+          containerPort: 5050
+        env:
+          - name: PRODUCT_CATALOG_SERVICE_ADDR
+            value: "${PRODUCT_CATALOG_SERVICE_ADDR}:3550"
+          - name: SHIPPING_SERVICE_ADDR
+            value: "${SHIPPING_SERVICE_ADDR}:50051"
+          - name: PAYMENT_SERVICE_ADDR
+            value: "${PAYMENT_SERVICE_ADDR}:50051"
+          - name: EMAIL_SERVICE_ADDR
+            value: "${EMAIL_SERVICE_ADDR}:5000"
+          - name: CURRENCY_SERVICE_ADDR
+            value: "${CURRENCY_SERVICE_ADDR}:7000"
+          - name: CART_SERVICE_ADDR
+            value: "${CART_SERVICE_ADDR}:7070"
+          - name: DISABLE_STATS
+            value: "1"
+          - name: DISABLE_TRACING
+            value: "1"
+          - name: DISABLE_PROFILER
+            value: "1"
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+  traffic:
+  - percent: 100
+    latestRevision: true
