@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: frontend
   annotations:
-    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+    run.googleapis.com/ingress: all
     run.googleapis.com/launch-stage: BETA
 spec:
   template:

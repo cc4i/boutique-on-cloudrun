@@ -1,0 +1,33 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: cartservice
+  annotations:
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+    run.googleapis.com/launch-stage: BETA
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: '50'
+        run.googleapis.com/execution-environment: gen2
+        autoscaling.knative.dev/maxScale: '1000'
+        run.googleapis.com/vpc-access-connector: projects/play-with-anthos-340801/locations/asia-east2/connectors/vpc-connector-run2bt
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 600
+      containers:
+      - image: gcr.io/google-samples/microservices-demo/cartservice:v0.3.6
+        ports:
+        - name: h2c
+          containerPort: 7070
+        env:
+        - name: REDIS_ADDR
+          value: "10.60.96.3:6379"
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+  traffic:
+  - percent: 100
+    latestRevision: true
