@@ -13,3 +13,5 @@ Not supported:
 2. cpu < 1 is not supported with concurrency > 1
 
 3. Not support to inject evironments, such as "PORT" (due to conflict with system auto-injection)
+
+4. Services access other services on Cloud Run must be authorized, which has to provide identity token.
