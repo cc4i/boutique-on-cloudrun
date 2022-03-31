@@ -1,17 +1,21 @@
-# 1. Launch services in Cloud Run / min 10
-# 2. Provision adjcent systems, such as Redis//
-# 3. Extract related pramameters and update launched services with right parameters.
-# 4. 
+#!/bin/sh
 
+# 1. Launch services in Cloud Run / min 10
 
 services="adservice cartservice checkoutservice currencyservice emailservice frontend paymentservice productcatalogservice recommendationservice shippingservice"
-# for svc in ${services[@]}
-# do
-#     echo "${svc}"
-#     endpoint=`gcloud run services describe ${svc} --region asia-east2 --format "value(status.address.url)"`
-#     echo "${svc} -> ${endpoint}"
+region="asia-east2"
+for svc in ${services[@]}
+do
+    echo "Install ${svc} into Cloud Run @ ${region} ..."
+    gcloud run services replace ${svc}.yaml --region ${region}
 
-# done
+done
+
+# 2. Provision adjcent systems, such as Redis//
+
+
+# 3. Extract related pramameters and update launched services with right parameters.
+
 export PRODUCT_CATALOG_SERVICE_ADDR=`gcloud run services describe productcatalogservice --region asia-east2 --format "value(status.address.url)"`
 echo "productcatalogservice -> ${PRODUCT_CATALOG_SERVICE_ADDR}"
 
@@ -40,6 +44,6 @@ export EMAIL_SERVICE_ADDR=`gcloud run services describe emailservice --region as
 echo "emailservice -> ${EMAIL_SERVICE_ADDR}"
 
 # gcloud run services list --format "value(SERVICE)"
-eval "echo \"$(cat frontend.yaml)\"" > tmp.yaml 
-gcloud run services  replace tmp.yaml --region asia-east2
-    
+# eval "echo \"$(cat frontend.yaml)\"" > tmp.yaml 
+# gcloud run services replace tmp.yaml --region asia-east2
+# rm tmp.yaml
