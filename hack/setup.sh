@@ -1,13 +1,18 @@
 #!/bin/sh
 
+# 0. Based environment variables
+export PROJECT_ID=play-with-anthos-340801
+export REGION=asia-east2
+export SERVERLESS_CONNECTOR=vpc-connector-cloudrun
+
 # 1. Launch services in Cloud Run / min 10
 
 services="adservice cartservice checkoutservice currencyservice emailservice frontend paymentservice productcatalogservice recommendationservice shippingservice"
-region="asia-east2"
+region=${REGION}
 for svc in ${services[@]}
 do
     echo "Install ${svc} into Cloud Run @ ${region} ..."
-    gcloud run services replace ${svc}.yaml --region ${region}
+    gcloud run services replace ../manifests/${svc}.yaml --region ${region}
 
 done
 
@@ -43,7 +48,14 @@ echo "paymentservice -> ${PAYMENT_SERVICE_ADDR}"
 export EMAIL_SERVICE_ADDR=`gcloud run services describe emailservice --region asia-east2 --format "value(status.address.url)"`
 echo "emailservice -> ${EMAIL_SERVICE_ADDR}"
 
-# gcloud run services list --format "value(SERVICE)"
-# eval "echo \"$(cat frontend.yaml)\"" > tmp.yaml 
-# gcloud run services replace tmp.yaml --region asia-east2
-# rm tmp.yaml
+# 4. Replace services with right envrionments
+( echo "cat <<EOF" ; cat ../manifests/frontend.yaml; echo EOF ) |sh > frontend_rpl.yaml
+gcloud run services replace ./frontend_rpl.yaml --region asia-east2
+( echo "cat <<EOF" ; cat ../manifests/checkoutservice.yaml; echo EOF ) |sh > checkoutservice_rpl.yaml
+gcloud run services replace ./checkoutservice_rpl.yaml --region asia-east2
+( echo "cat <<EOF" ; cat ../manifests/recommendationservice.yaml; echo EOF ) |sh > recommendationservice_rpl.yaml
+gcloud run services replace ./recommendationservice_rpl.yaml --region asia-east2
+# rm *_rpl.yaml
+
+# 5. Add 'allUsers' permission for frontend service to enable public assess.
+

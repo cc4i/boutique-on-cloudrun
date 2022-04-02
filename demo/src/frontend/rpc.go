@@ -21,6 +21,7 @@ import (
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/frontend/genproto"
 
 	"github.com/pkg/errors"
+	grpcMetadata "google.golang.org/grpc/metadata"
 )
 
 const (
@@ -28,6 +29,7 @@ const (
 )
 
 func (fe *frontendServer) getCurrencies(ctx context.Context) ([]string, error) {
+	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+fe.currencySvcToken)
 	currs, err := pb.NewCurrencyServiceClient(fe.currencySvcConn).
 		GetSupportedCurrencies(ctx, &pb.Empty{})
 	if err != nil {
@@ -43,28 +45,33 @@ func (fe *frontendServer) getCurrencies(ctx context.Context) ([]string, error) {
 }
 
 func (fe *frontendServer) getProducts(ctx context.Context) ([]*pb.Product, error) {
+	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+fe.productCatalogToken)
 	resp, err := pb.NewProductCatalogServiceClient(fe.productCatalogSvcConn).
 		ListProducts(ctx, &pb.Empty{})
 	return resp.GetProducts(), err
 }
 
 func (fe *frontendServer) getProduct(ctx context.Context, id string) (*pb.Product, error) {
+	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+fe.productCatalogToken)
 	resp, err := pb.NewProductCatalogServiceClient(fe.productCatalogSvcConn).
 		GetProduct(ctx, &pb.GetProductRequest{Id: id})
 	return resp, err
 }
 
 func (fe *frontendServer) getCart(ctx context.Context, userID string) ([]*pb.CartItem, error) {
+	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+fe.cartSvcToken)
 	resp, err := pb.NewCartServiceClient(fe.cartSvcConn).GetCart(ctx, &pb.GetCartRequest{UserId: userID})
 	return resp.GetItems(), err
 }
 
 func (fe *frontendServer) emptyCart(ctx context.Context, userID string) error {
+	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+fe.cartSvcToken)
 	_, err := pb.NewCartServiceClient(fe.cartSvcConn).EmptyCart(ctx, &pb.EmptyCartRequest{UserId: userID})
 	return err
 }
 
 func (fe *frontendServer) insertCart(ctx context.Context, userID, productID string, quantity int32) error {
+	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+fe.cartSvcToken)
 	_, err := pb.NewCartServiceClient(fe.cartSvcConn).AddItem(ctx, &pb.AddItemRequest{
 		UserId: userID,
 		Item: &pb.CartItem{
@@ -75,6 +82,7 @@ func (fe *frontendServer) insertCart(ctx context.Context, userID, productID stri
 }
 
 func (fe *frontendServer) convertCurrency(ctx context.Context, money *pb.Money, currency string) (*pb.Money, error) {
+	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+fe.currencySvcToken)
 	if avoidNoopCurrencyConversionRPC && money.GetCurrencyCode() == currency {
 		return money, nil
 	}
@@ -85,6 +93,7 @@ func (fe *frontendServer) convertCurrency(ctx context.Context, money *pb.Money, 
 }
 
 func (fe *frontendServer) getShippingQuote(ctx context.Context, items []*pb.CartItem, currency string) (*pb.Money, error) {
+	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+fe.shippingSvcToken)
 	quote, err := pb.NewShippingServiceClient(fe.shippingSvcConn).GetQuote(ctx,
 		&pb.GetQuoteRequest{
 			Address: nil,
@@ -92,6 +101,7 @@ func (fe *frontendServer) getShippingQuote(ctx context.Context, items []*pb.Cart
 	if err != nil {
 		return nil, err
 	}
+	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+fe.currencySvcToken)
 	localized, err := fe.convertCurrency(ctx, quote.GetCostUsd(), currency)
 	return localized, errors.Wrap(err, "failed to convert currency for shipping cost")
 }
@@ -119,6 +129,7 @@ func (fe *frontendServer) getRecommendations(ctx context.Context, userID string,
 func (fe *frontendServer) getAd(ctx context.Context, ctxKeys []string) ([]*pb.Ad, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
 	defer cancel()
+	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+fe.adSvcToken)
 
 	resp, err := pb.NewAdServiceClient(fe.adSvcConn).GetAds(ctx, &pb.AdRequest{
 		ContextKeys: ctxKeys,

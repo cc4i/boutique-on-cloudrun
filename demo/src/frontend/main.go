@@ -39,7 +39,6 @@ import (
 
 	"google.golang.org/api/idtoken"
 	"google.golang.org/grpc/credentials"
-	grpcMetadata "google.golang.org/grpc/metadata"
 )
 
 const (
@@ -67,24 +66,31 @@ type ctxKeySessionID struct{}
 type frontendServer struct {
 	productCatalogSvcAddr string
 	productCatalogSvcConn *grpc.ClientConn
+	productCatalogToken   string
 
-	currencySvcAddr string
-	currencySvcConn *grpc.ClientConn
+	currencySvcAddr  string
+	currencySvcConn  *grpc.ClientConn
+	currencySvcToken string
 
-	cartSvcAddr string
-	cartSvcConn *grpc.ClientConn
+	cartSvcAddr  string
+	cartSvcConn  *grpc.ClientConn
+	cartSvcToken string
 
-	recommendationSvcAddr string
-	recommendationSvcConn *grpc.ClientConn
+	recommendationSvcAddr  string
+	recommendationSvcConn  *grpc.ClientConn
+	recommendationSvcToken string
 
-	checkoutSvcAddr string
-	checkoutSvcConn *grpc.ClientConn
+	checkoutSvcAddr  string
+	checkoutSvcConn  *grpc.ClientConn
+	checkoutSvcToken string
 
-	shippingSvcAddr string
-	shippingSvcConn *grpc.ClientConn
+	shippingSvcAddr  string
+	shippingSvcConn  *grpc.ClientConn
+	shippingSvcToken string
 
-	adSvcAddr string
-	adSvcConn *grpc.ClientConn
+	adSvcAddr  string
+	adSvcConn  *grpc.ClientConn
+	adSvcToken string
 }
 
 func main() {
@@ -129,13 +135,13 @@ func main() {
 	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_SERVICE_ADDR")
 	mustMapEnv(&svc.adSvcAddr, "AD_SERVICE_ADDR")
 
-	mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr)
-	mustConnGRPC(ctx, &svc.productCatalogSvcConn, svc.productCatalogSvcAddr)
-	mustConnGRPC(ctx, &svc.cartSvcConn, svc.cartSvcAddr)
-	mustConnGRPC(ctx, &svc.recommendationSvcConn, svc.recommendationSvcAddr)
-	mustConnGRPC(ctx, &svc.shippingSvcConn, svc.shippingSvcAddr)
-	mustConnGRPC(ctx, &svc.checkoutSvcConn, svc.checkoutSvcAddr)
-	mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr)
+	mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr, &svc.currencySvcToken)
+	mustConnGRPC(ctx, &svc.productCatalogSvcConn, svc.productCatalogSvcAddr, &svc.productCatalogToken)
+	mustConnGRPC(ctx, &svc.cartSvcConn, svc.cartSvcAddr, &svc.cartSvcToken)
+	mustConnGRPC(ctx, &svc.recommendationSvcConn, svc.recommendationSvcAddr, &svc.recommendationSvcToken)
+	mustConnGRPC(ctx, &svc.shippingSvcConn, svc.shippingSvcAddr, &svc.shippingSvcToken)
+	mustConnGRPC(ctx, &svc.checkoutSvcConn, svc.checkoutSvcAddr, &svc.checkoutSvcToken)
+	mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr, &svc.adSvcToken)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", svc.homeHandler).Methods(http.MethodGet, http.MethodHead)
@@ -269,7 +275,7 @@ func mustMapEnv(target *string, envKey string) {
 }
 
 // see: https://cloud.google.com/run/docs/triggering/grpc#configuring_your_service_to_use_http2
-func mustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string) {
+func mustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string, tok *string) {
 	var err error
 	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
@@ -287,9 +293,10 @@ func mustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string) {
 		log.Errorf("TokenSource.Token: %v", err)
 		return
 	}
-	log.Info("token -> %s", token.AccessToken)
+	log.Infof("token -> %s", token.AccessToken)
 	// Add token to gRPC Request.
-	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token.AccessToken)
+	// ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token.AccessToken)
+	*tok = token.AccessToken
 
 	// Retrieve x509 cert
 	systemRoots, err := x509.SystemCertPool()

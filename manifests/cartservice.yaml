@@ -12,7 +12,9 @@ spec:
         autoscaling.knative.dev/minScale: '2'
         run.googleapis.com/execution-environment: gen2
         autoscaling.knative.dev/maxScale: '1000'
-        run.googleapis.com/vpc-access-connector: projects/play-with-anthos-340801/locations/asia-east2/connectors/vpc-connector-run2bt
+        run.googleapis.com/vpc-access-egress: all-traffic
+        run.googleapis.com/vpc-access-connector: projects/${PROJECT_ID}/locations/${REGION}/connectors/${SERVERLESS_CONNECTOR}
+        run.googleapis.com/cpu-throttling: 'false'
     spec:
       containerConcurrency: 10
       timeoutSeconds: 600
