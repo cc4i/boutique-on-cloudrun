@@ -29,6 +29,10 @@ from opencensus.ext.grpc import server_interceptor
 from opencensus.trace import samplers
 from opencensus.common.transports.async_ import AsyncTransport
 
+import google.oauth2.id_token
+import google.auth.transport.requests
+from google.auth.transport import grpc as google_auth_transport_grpc
+
 import demo_pb2
 import demo_pb2_grpc
 from grpc_health.v1 import health_pb2
@@ -141,7 +145,20 @@ if __name__ == "__main__":
     if catalog_addr == "":
         raise Exception('PRODUCT_CATALOG_SERVICE_ADDR environment variable not set')
     logger.info("product catalog address: " + catalog_addr)
-    channel = grpc.insecure_channel(catalog_addr)
+    
+    ######
+    # !!!Changes!!
+    # channel = grpc.insecure_channel(catalog_addr)
+    # All Cloud Run use secure channel by default
+    request = google.auth.transport.requests.Request()
+    target_audience = "https://{}".format(catalog_addr.partition(":")[0])
+    id_token = google.oauth2.id_token.fetch_id_token(request, target_audience)
+    # channel = grpc.secure_channel(catalog_addr, grpc.ssl_channel_credentials())
+    channel = google_auth_transport_grpc.secure_authorized_channel(
+      credentials=id_token, request=request, target=catalog_addr, ssl_credentials=grpc.ssl_channel_credentials()
+    )
+    #####
+
     product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(channel)
 
     # create gRPC server
