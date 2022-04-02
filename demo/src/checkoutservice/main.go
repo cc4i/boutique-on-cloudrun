@@ -37,6 +37,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	grpcMetadata "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/genproto"
@@ -434,8 +435,8 @@ func (cs *checkoutService) shipOrder(ctx context.Context, address *pb.Address, i
 	return resp.GetTrackingId(), nil
 }
 
-func mustConnGRPC(ctx context.Context, addr string) (conn *ClientConn, err error) {
-	var err error
+func mustConnGRPC(ctx context.Context, addr string) (conn *grpc.ClientConn, err error) {
+	// var err error
 	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
 

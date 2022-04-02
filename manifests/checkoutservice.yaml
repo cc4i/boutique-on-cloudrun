@@ -19,7 +19,7 @@ spec:
       containerConcurrency: 10
       timeoutSeconds: 600
       containers:
-      - image: gcr.io/google-samples/microservices-demo/checkoutservice:v0.3.6
+      - image: asia-east2-docker.pkg.dev/play-with-anthos-340801/cloudrun-loader/checkoutservice
         # readinessProbe:
         #   exec:
         #     command: ["/bin/grpc_health_probe", "-addr=:5050"]
