@@ -20,32 +20,41 @@ done
 
 
 # 3. Extract related pramameters and update launched services with right parameters.
-
-export PRODUCT_CATALOG_SERVICE_ADDR=`gcloud run services describe productcatalogservice --region asia-east2 --format "value(status.address.url)"`
+prefix="https://"
+url=`gcloud run services describe productcatalogservice --region asia-east2 --format "value(status.address.url)"`
+export PRODUCT_CATALOG_SERVICE_ADDR=${url#"$prefix"}
 echo "productcatalogservice -> ${PRODUCT_CATALOG_SERVICE_ADDR}"
 
-export CURRENCY_SERVICE_ADDR=`gcloud run services describe currencyservice --region asia-east2 --format "value(status.address.url)"`
+url=`gcloud run services describe currencyservice --region asia-east2 --format "value(status.address.url)"`
+export CURRENCY_SERVICE_ADDR=${url#"$prefix"}
 echo "currencyservice -> ${CURRENCY_SERVICE_ADDR}"
 
-export CART_SERVICE_ADDR=`gcloud run services describe cartservice --region asia-east2 --format "value(status.address.url)"`
+url=`gcloud run services describe cartservice --region asia-east2 --format "value(status.address.url)"`
+export CART_SERVICE_ADDR=${url#"$prefix"}
 echo "cartservice -> ${CART_SERVICE_ADDR}"
 
-export RECOMMENDATION_SERVICE_ADDR=`gcloud run services describe recommendationservice --region asia-east2 --format "value(status.address.url)"`
+url=`gcloud run services describe recommendationservice --region asia-east2 --format "value(status.address.url)"`
+export RECOMMENDATION_SERVICE_ADDR=${url#"$prefix"}
 echo "recommendationservice -> ${RECOMMENDATION_SERVICE_ADDR}"
 
-export SHIPPING_SERVICE_ADDR=`gcloud run services describe shippingservice --region asia-east2 --format "value(status.address.url)"`
+url=`gcloud run services describe shippingservice --region asia-east2 --format "value(status.address.url)"`
+export SHIPPING_SERVICE_ADDR=${url#"$prefix"}
 echo "shippingservice -> ${SHIPPING_SERVICE_ADDR}"
 
-export CHECKOUT_SERVICE_ADDR=`gcloud run services describe checkoutservice --region asia-east2 --format "value(status.address.url)"`
+url=`gcloud run services describe checkoutservice --region asia-east2 --format "value(status.address.url)"`
+export CHECKOUT_SERVICE_ADDR=${url#"$prefix"}
 echo "checkoutservice -> ${CHECKOUT_SERVICE_ADDR}"
 
-export AD_SERVICE_ADDR=`gcloud run services describe adservice --region asia-east2 --format "value(status.address.url)"`
+url=`gcloud run services describe adservice --region asia-east2 --format "value(status.address.url)"`
+export AD_SERVICE_ADDR=${url#"$prefix"}
 echo "adservice -> ${AD_SERVICE_ADDR}"
 
-export PAYMENT_SERVICE_ADDR=`gcloud run services describe paymentservice --region asia-east2 --format "value(status.address.url)"`
+url=`gcloud run services describe paymentservice --region asia-east2 --format "value(status.address.url)"`
+export PAYMENT_SERVICE_ADDR=${url#"$prefix"}
 echo "paymentservice -> ${PAYMENT_SERVICE_ADDR}"
 
-export EMAIL_SERVICE_ADDR=`gcloud run services describe emailservice --region asia-east2 --format "value(status.address.url)"`
+url=`gcloud run services describe emailservice --region asia-east2 --format "value(status.address.url)"`
+export EMAIL_SERVICE_ADDR=${url#"$prefix"}
 echo "emailservice -> ${EMAIL_SERVICE_ADDR}"
 
 # 4. Replace services with right envrionments
