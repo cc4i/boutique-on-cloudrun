@@ -10,47 +10,47 @@ export SERVERLESS_CONNECTOR=vpc-connector-cloudrun
 export REDIS_HOST=`gcloud redis instances describe redis4cart --region ${region} --format="value('host')"`
 export REDIS_PORT=`gcloud redis instances describe redis4cart --region ${region} --format="value('port')"`
 
-# 1.2 Build/Push image into Artifact Registry by skafold & retrieve /image:tag/
+# 1.2 Build/Push image into Artifact Registry by skaffold & retrieve /image:tag/
 cd ../demo
-skafold build
+skaffold build
 for image in `skaffold build --dry-run --output='{{json .}}' --quiet |jq '.builds[].tag' -r`
 do 
     
     case ${image} in
         *emailservice*)
-            export emailservice=${image}
+            export emailservice="${image}"
             echo ${emailservice}
             ;;
         *productcatalogservice*)
-            export productcatalogservice=${image}
+            export productcatalogservice="${image}"
             echo ${productcatalogservice}
             ;;
         *recommendationservice*)
-            export recommendationservice=${image}
+            export recommendationservice="${image}"
             echo ${recommendationservice}
             ;;
         *checkoutservice*)
-            export checkoutservice=${image}
+            export checkoutservice="${image}"
             echo ${checkoutservice}
             ;;
         *paymentservice*)
-            export paymentservice=${image}
+            export paymentservice="${image}"
             echo ${paymentservice}
             ;;
         *currencyservice*)
-            export currencyservice=${image}
+            export currencyservice="${image}"
             echo ${currencyservice}
             ;;
         *cartservice*)
-            export cartservice=${image}
+            export cartservice="${image}"
             echo ${cartservice}
             ;;
         *frontend*)
-            export frontend=${image}
+            export frontend="${image}"
             echo ${frontend}
             ;;
         *adservice*)
-            export adservice=${image}
+            export adservice="${image}"
             echo ${adservice}
             ;;
     esac
