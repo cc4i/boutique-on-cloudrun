@@ -37,12 +37,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-	grpcMetadata "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/genproto"
 	money "github.com/GoogleCloudPlatform/microservices-demo/src/checkoutservice/money"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	grpcMetadata "google.golang.org/grpc/metadata"
 )
 
 const (
@@ -67,12 +67,23 @@ func init() {
 }
 
 type checkoutService struct {
-	productCatalogSvcAddr string
-	cartSvcAddr           string
-	currencySvcAddr       string
-	shippingSvcAddr       string
-	emailSvcAddr          string
-	paymentSvcAddr        string
+	productCatalogSvcAddr  string
+	productCatalogSvcToken string
+
+	cartSvcAddr  string
+	cartSvcToken string
+
+	currencySvcAddr  string
+	currencySvcToken string
+
+	shippingSvcAddr  string
+	shippingSvcToken string
+
+	emailSvcAddr  string
+	emailSvcToken string
+
+	paymentSvcAddr  string
+	paymentSvcToken string
 }
 
 func main() {
@@ -306,14 +317,16 @@ func (cs *checkoutService) prepareOrderItemsAndShippingQuoteFromCart(ctx context
 }
 
 func (cs *checkoutService) quoteShipping(ctx context.Context, address *pb.Address, items []*pb.CartItem) (*pb.Money, error) {
-	conn, err := mustConnGRPC(ctx, cs.shippingSvcAddr) //grpc.DialContext(ctx, cs.shippingSvcAddr,
+	conn, tk, err := mustConnGRPC(ctx, cs.shippingSvcAddr) //grpc.DialContext(ctx, cs.shippingSvcAddr,
 	// grpc.WithInsecure(),
 	// grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
+	cs.shippingSvcToken = tk
 	if err != nil {
 		return nil, fmt.Errorf("could not connect shipping service: %+v", err)
 	}
 	defer conn.Close()
 
+	ctx = grpcMetadata.NewOutgoingContext(ctx, grpcMetadata.Pairs("Authorization", "Bearer "+cs.shippingSvcToken))
 	shippingQuote, err := pb.NewShippingServiceClient(conn).
 		GetQuote(ctx, &pb.GetQuoteRequest{
 			Address: address,
@@ -325,12 +338,14 @@ func (cs *checkoutService) quoteShipping(ctx context.Context, address *pb.Addres
 }
 
 func (cs *checkoutService) getUserCart(ctx context.Context, userID string) ([]*pb.CartItem, error) {
-	conn, err := mustConnGRPC(ctx, cs.cartSvcAddr) //grpc.DialContext(ctx, cs.cartSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
+	conn, tk, err := mustConnGRPC(ctx, cs.cartSvcAddr) //grpc.DialContext(ctx, cs.cartSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
 	if err != nil {
 		return nil, fmt.Errorf("could not connect cart service: %+v", err)
 	}
+	cs.cartSvcToken = tk
 	defer conn.Close()
 
+	ctx = grpcMetadata.NewOutgoingContext(ctx, grpcMetadata.Pairs("Authorization", "Bearer "+cs.cartSvcToken))
 	cart, err := pb.NewCartServiceClient(conn).GetCart(ctx, &pb.GetCartRequest{UserId: userID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user cart during checkout: %+v", err)
@@ -339,12 +354,14 @@ func (cs *checkoutService) getUserCart(ctx context.Context, userID string) ([]*p
 }
 
 func (cs *checkoutService) emptyUserCart(ctx context.Context, userID string) error {
-	conn, err := mustConnGRPC(ctx, cs.cartSvcAddr) //grpc.DialContext(ctx, cs.cartSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
+	conn, tk, err := mustConnGRPC(ctx, cs.cartSvcAddr) //grpc.DialContext(ctx, cs.cartSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
 	if err != nil {
 		return fmt.Errorf("could not connect cart service: %+v", err)
 	}
+	cs.cartSvcToken = tk
 	defer conn.Close()
 
+	ctx = grpcMetadata.NewOutgoingContext(ctx, grpcMetadata.Pairs("Authorization", "Bearer "+cs.cartSvcToken))
 	if _, err = pb.NewCartServiceClient(conn).EmptyCart(ctx, &pb.EmptyCartRequest{UserId: userID}); err != nil {
 		return fmt.Errorf("failed to empty user cart during checkout: %+v", err)
 	}
@@ -354,18 +371,22 @@ func (cs *checkoutService) emptyUserCart(ctx context.Context, userID string) err
 func (cs *checkoutService) prepOrderItems(ctx context.Context, items []*pb.CartItem, userCurrency string) ([]*pb.OrderItem, error) {
 	out := make([]*pb.OrderItem, len(items))
 
-	conn, err := mustConnGRPC(ctx, cs.productCatalogSvcAddr) //grpc.DialContext(ctx, cs.productCatalogSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
+	conn, tk, err := mustConnGRPC(ctx, cs.productCatalogSvcAddr) //grpc.DialContext(ctx, cs.productCatalogSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
 	if err != nil {
 		return nil, fmt.Errorf("could not connect product catalog service: %+v", err)
 	}
+	cs.productCatalogSvcToken = tk
 	defer conn.Close()
 	cl := pb.NewProductCatalogServiceClient(conn)
 
 	for i, item := range items {
+		ctx = grpcMetadata.NewOutgoingContext(ctx, grpcMetadata.Pairs("Authorization", "Bearer "+cs.productCatalogSvcToken))
 		product, err := cl.GetProduct(ctx, &pb.GetProductRequest{Id: item.GetProductId()})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get product #%q", item.GetProductId())
 		}
+
+		ctx = grpcMetadata.NewOutgoingContext(ctx, grpcMetadata.Pairs("Authorization", "Bearer "+cs.currencySvcToken))
 		price, err := cs.convertCurrency(ctx, product.GetPriceUsd(), userCurrency)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert price of %q to %s", item.GetProductId(), userCurrency)
@@ -378,12 +399,15 @@ func (cs *checkoutService) prepOrderItems(ctx context.Context, items []*pb.CartI
 }
 
 func (cs *checkoutService) convertCurrency(ctx context.Context, from *pb.Money, toCurrency string) (*pb.Money, error) {
-	conn, err := mustConnGRPC(ctx, cs.currencySvcAddr) //grpc.DialContext(ctx, cs.currencySvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
+	conn, tk, err := mustConnGRPC(ctx, cs.currencySvcAddr) //grpc.DialContext(ctx, cs.currencySvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
 	if err != nil {
 		return nil, fmt.Errorf("could not connect currency service: %+v", err)
 	}
+	cs.currencySvcToken = tk
 	defer conn.Close()
-	result, err := pb.NewCurrencyServiceClient(conn).Convert(context.TODO(), &pb.CurrencyConversionRequest{
+
+	ctx = grpcMetadata.NewOutgoingContext(ctx, grpcMetadata.Pairs("Authorization", "Bearer "+cs.currencySvcToken))
+	result, err := pb.NewCurrencyServiceClient(conn).Convert(ctx, &pb.CurrencyConversionRequest{
 		From:   from,
 		ToCode: toCurrency})
 	if err != nil {
@@ -393,12 +417,14 @@ func (cs *checkoutService) convertCurrency(ctx context.Context, from *pb.Money, 
 }
 
 func (cs *checkoutService) chargeCard(ctx context.Context, amount *pb.Money, paymentInfo *pb.CreditCardInfo) (string, error) {
-	conn, err := mustConnGRPC(ctx, cs.paymentSvcAddr) //grpc.DialContext(ctx, cs.paymentSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
+	conn, tk, err := mustConnGRPC(ctx, cs.paymentSvcAddr) //grpc.DialContext(ctx, cs.paymentSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
 	if err != nil {
 		return "", fmt.Errorf("failed to connect payment service: %+v", err)
 	}
+	cs.paymentSvcToken = tk
 	defer conn.Close()
 
+	ctx = grpcMetadata.NewOutgoingContext(ctx, grpcMetadata.Pairs("Authorization", "Bearer "+cs.paymentSvcToken))
 	paymentResp, err := pb.NewPaymentServiceClient(conn).Charge(ctx, &pb.ChargeRequest{
 		Amount:     amount,
 		CreditCard: paymentInfo})
@@ -409,11 +435,14 @@ func (cs *checkoutService) chargeCard(ctx context.Context, amount *pb.Money, pay
 }
 
 func (cs *checkoutService) sendOrderConfirmation(ctx context.Context, email string, order *pb.OrderResult) error {
-	conn, err := mustConnGRPC(ctx, cs.emailSvcAddr) //grpc.DialContext(ctx, cs.emailSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
+	conn, tk, err := mustConnGRPC(ctx, cs.emailSvcAddr) //grpc.DialContext(ctx, cs.emailSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
 	if err != nil {
 		return fmt.Errorf("failed to connect email service: %+v", err)
 	}
+	cs.emailSvcToken = tk
 	defer conn.Close()
+
+	ctx = grpcMetadata.NewOutgoingContext(ctx, grpcMetadata.Pairs("Authorization", "Bearer "+cs.emailSvcToken))
 	_, err = pb.NewEmailServiceClient(conn).SendOrderConfirmation(ctx, &pb.SendOrderConfirmationRequest{
 		Email: email,
 		Order: order})
@@ -421,11 +450,14 @@ func (cs *checkoutService) sendOrderConfirmation(ctx context.Context, email stri
 }
 
 func (cs *checkoutService) shipOrder(ctx context.Context, address *pb.Address, items []*pb.CartItem) (string, error) {
-	conn, err := mustConnGRPC(ctx, cs.shippingSvcAddr) //grpc.DialContext(ctx, cs.shippingSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
+	conn, tk, err := mustConnGRPC(ctx, cs.shippingSvcAddr) //grpc.DialContext(ctx, cs.shippingSvcAddr, grpc.WithInsecure(), grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
 	if err != nil {
 		return "", fmt.Errorf("failed to connect email service: %+v", err)
 	}
+	cs.shippingSvcToken = tk
 	defer conn.Close()
+
+	ctx = grpcMetadata.NewOutgoingContext(ctx, grpcMetadata.Pairs("Authorization", "Bearer "+cs.shippingSvcToken))
 	resp, err := pb.NewShippingServiceClient(conn).ShipOrder(ctx, &pb.ShipOrderRequest{
 		Address: address,
 		Items:   items})
@@ -435,8 +467,8 @@ func (cs *checkoutService) shipOrder(ctx context.Context, address *pb.Address, i
 	return resp.GetTrackingId(), nil
 }
 
-// mustConnGRPC for adding 'Authorization' token into gRPC header
-func mustConnGRPC(ctx context.Context, addr string) (conn *grpc.ClientConn, err error) {
+// mustConnGRPC get token & connect with SSL
+func mustConnGRPC(ctx context.Context, addr string) (conn *grpc.ClientConn, tk string, err error) {
 	// var err error
 	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
@@ -456,7 +488,8 @@ func mustConnGRPC(ctx context.Context, addr string) (conn *grpc.ClientConn, err 
 	}
 	log.Infof("token -> %s", token.AccessToken)
 	// Add token to gRPC Request.
-	ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token.AccessToken)
+	// ctx = grpcMetadata.NewOutgoingContext(ctx, grpcMetadata.Pairs("Authorization", "Bearer "+token.AccessToken))
+	// ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token.AccessToken)
 
 	// Retrieve x509 cert
 	systemRoots, err := x509.SystemCertPool()
@@ -477,7 +510,7 @@ func mustConnGRPC(ctx context.Context, addr string) (conn *grpc.ClientConn, err 
 		panic(errors.Wrapf(err, "grpc: failed to connect %s", addr))
 	}
 
-	return conn, err
+	return conn, token.AccessToken, err
 
 }
 
