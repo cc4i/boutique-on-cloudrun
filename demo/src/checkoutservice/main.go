@@ -435,6 +435,7 @@ func (cs *checkoutService) shipOrder(ctx context.Context, address *pb.Address, i
 	return resp.GetTrackingId(), nil
 }
 
+// mustConnGRPC for adding 'Authorization' token into gRPC header
 func mustConnGRPC(ctx context.Context, addr string) (conn *grpc.ClientConn, err error) {
 	// var err error
 	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
