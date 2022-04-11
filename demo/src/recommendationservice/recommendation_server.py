@@ -147,7 +147,7 @@ if __name__ == "__main__":
     logger.info("product catalog address: " + catalog_addr)
     
     ######
-    # !!!Changes!!
+    # !!!Changes!!!
     # channel = grpc.insecure_channel(catalog_addr)
     # All Cloud Run use secure channel by default
     request = google.auth.transport.requests.Request()
