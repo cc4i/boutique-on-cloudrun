@@ -282,7 +282,7 @@ func mustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string, tok 
 
 	///////
 	// Extract audience
-	aud := "https://" + addr[:(strings.LastIndex(addr, ":"))]
+	aud := "https://" + addr[:(strings.LastIndex(addr, ":"))] + "/"
 	tokenSource, err := idtoken.NewTokenSource(ctx, aud)
 	if err != nil {
 		log.Errorf("idtoken.NewTokenSource: %v", err)

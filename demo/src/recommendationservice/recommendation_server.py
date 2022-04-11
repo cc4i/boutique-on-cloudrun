@@ -31,7 +31,8 @@ from opencensus.common.transports.async_ import AsyncTransport
 
 import google.oauth2.id_token
 import google.auth.transport.requests
-from google.auth.transport import grpc as google_auth_transport_grpc
+import google.auth.transport.grpc
+# from google.auth.transport import grpc as google_auth_transport_grpc
 
 import demo_pb2
 import demo_pb2_grpc
@@ -68,6 +69,8 @@ def initStackdriverProfiling():
 
 class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
     def ListRecommendations(self, request, context):
+      try:
+        logger.info("Entered into ListRecommendations()") 
         max_responses = 5
         # fetch list of products from product catalog stub
         cat_response = product_catalog_stub.ListProducts(demo_pb2.Empty())
@@ -83,7 +86,12 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
         # build and return response
         response = demo_pb2.ListRecommendationsResponse()
         response.product_ids.extend(prod_list)
-        return response
+        logger.info("Exited into ListRecommendations()") 
+      except Exception as e:
+        logger.error("ListRecommendations error={}".format(e)) 
+        return []
+      return response
+      
 
     def Check(self, request, context):
         return health_pb2.HealthCheckResponse(
@@ -148,18 +156,18 @@ if __name__ == "__main__":
     
     ######
     # !!!Changes!!!
-    # channel = grpc.insecure_channel(catalog_addr)
-    # All Cloud Run use secure channel by default
+    credentials, _ = google.auth.default()
     request = google.auth.transport.requests.Request()
-    target_audience = "https://{}".format(catalog_addr.partition(":")[0])
+    target_audience = "https://{}/".format(catalog_addr.partition(":")[0])
     id_token = google.oauth2.id_token.fetch_id_token(request, target_audience)
-    # channel = grpc.secure_channel(catalog_addr, grpc.ssl_channel_credentials())
-    channel = google_auth_transport_grpc.secure_authorized_channel(
-      credentials=id_token, request=request, target=catalog_addr, ssl_credentials=grpc.ssl_channel_credentials()
-    )
-    #####
+    # req.add_header("Authorization", f"Bearer {id_token}")
+    tok = grpc.access_token_call_credentials(id_token)
+    ccc = grpc.composite_channel_credentials(grpc.ssl_channel_credentials(), tok)
 
+    channel = grpc.secure_channel(catalog_addr,ccc)
+    
     product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(channel)
+    #####
 
     # create gRPC server
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10),

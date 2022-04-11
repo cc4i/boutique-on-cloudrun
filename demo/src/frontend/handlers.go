@@ -29,6 +29,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	grpcMetadata "google.golang.org/grpc/metadata"
 
 	pb "github.com/GoogleCloudPlatform/microservices-demo/src/frontend/genproto"
 	"github.com/GoogleCloudPlatform/microservices-demo/src/frontend/money"
@@ -64,6 +65,7 @@ func (fe *frontendServer) homeHandler(w http.ResponseWriter, r *http.Request) {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve products"), http.StatusInternalServerError)
 		return
 	}
+
 	cart, err := fe.getCart(r.Context(), sessionID(r))
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "could not retrieve cart"), http.StatusInternalServerError)
@@ -176,6 +178,8 @@ func (fe *frontendServer) productHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	log.WithField("token", fe.recommendationSvcToken).WithField("sessionID", sessionID(r)).WithField("productId", id).
+		Info("call fe.getRecommendations()")
 	recommendations, err := fe.getRecommendations(r.Context(), sessionID(r), []string{id})
 	if err != nil {
 		renderHTTPError(log, r, w, errors.Wrap(err, "failed to get product recommendations"), http.StatusInternalServerError)
@@ -335,8 +339,9 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 		ccCVV, _      = strconv.ParseInt(r.FormValue("credit_card_cvv"), 10, 32)
 	)
 
+	rtx := grpcMetadata.NewOutgoingContext(r.Context(), grpcMetadata.Pairs("Authorization", "Bearer "+fe.checkoutSvcToken))
 	order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).
-		PlaceOrder(r.Context(), &pb.PlaceOrderRequest{
+		PlaceOrder(rtx, &pb.PlaceOrderRequest{
 			Email: email,
 			CreditCard: &pb.CreditCardInfo{
 				CreditCardNumber:          ccNumber,

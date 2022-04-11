@@ -29,6 +29,10 @@ do
             export recommendationservice="${image}"
             echo ${recommendationservice}
             ;;
+        *shippingservice*)
+            export shippingservice="${image}"
+            echo ${shippingservice}
+            ;;
         *checkoutservice*)
             export checkoutservice="${image}"
             echo ${checkoutservice}
