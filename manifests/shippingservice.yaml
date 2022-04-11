@@ -17,7 +17,7 @@ spec:
       containerConcurrency: 10
       timeoutSeconds: 600
       containers:
-      - image: asia-east2-docker.pkg.dev/play-with-anthos-340801/cloudrun-loader/shippingservice
+      - image: ${shippingservice}
         ports:
         - name: h2c
           containerPort: 50051

@@ -19,13 +19,13 @@ spec:
       containerConcurrency: 10
       timeoutSeconds: 600
       containers:
-      - image: asia-east2-docker.pkg.dev/play-with-anthos-340801/cloudrun-loader/cartservice
+      - image: ${cartservice}
         ports:
         - name: h2c
           containerPort: 7070
         env:
         - name: REDIS_ADDR
-          value: "10.60.96.3:6379"
+          value: "${REDIS_HOST}:${REDIS_PORT}"
         resources:
           limits:
             cpu: 1000m

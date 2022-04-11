@@ -34,7 +34,7 @@ spec:
         - containerPort: 7070
         env:
         - name: REDIS_ADDR
-          value: "redis-cart:6379"
+          value: "${REDIS_HOST}:${REDIS_PORT}"
         resources:
           requests:
             cpu: 200m
