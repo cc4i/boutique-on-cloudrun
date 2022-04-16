@@ -37,7 +37,7 @@ import (
 	"go.opencensus.io/trace"
 	"google.golang.org/grpc"
 
-	"google.golang.org/api/idtoken"
+	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -66,31 +66,38 @@ type ctxKeySessionID struct{}
 type frontendServer struct {
 	productCatalogSvcAddr string
 	productCatalogSvcConn *grpc.ClientConn
-	productCatalogToken   string
+	productCatalogToken   *oauth2.Token
+	productCatalogAud     string
 
 	currencySvcAddr  string
 	currencySvcConn  *grpc.ClientConn
-	currencySvcToken string
+	currencySvcToken *oauth2.Token
+	currencyAud      string
 
 	cartSvcAddr  string
 	cartSvcConn  *grpc.ClientConn
-	cartSvcToken string
+	cartSvcToken *oauth2.Token
+	cartAud      string
 
 	recommendationSvcAddr  string
 	recommendationSvcConn  *grpc.ClientConn
-	recommendationSvcToken string
+	recommendationSvcToken *oauth2.Token
+	recommendationAud      string
 
 	checkoutSvcAddr  string
 	checkoutSvcConn  *grpc.ClientConn
-	checkoutSvcToken string
+	checkoutSvcToken *oauth2.Token
+	checkoutAud      string
 
 	shippingSvcAddr  string
 	shippingSvcConn  *grpc.ClientConn
-	shippingSvcToken string
+	shippingSvcToken *oauth2.Token
+	shippingAud      string
 
 	adSvcAddr  string
 	adSvcConn  *grpc.ClientConn
-	adSvcToken string
+	adSvcToken *oauth2.Token
+	adAud      string
 }
 
 func main() {
@@ -135,13 +142,13 @@ func main() {
 	mustMapEnv(&svc.shippingSvcAddr, "SHIPPING_SERVICE_ADDR")
 	mustMapEnv(&svc.adSvcAddr, "AD_SERVICE_ADDR")
 
-	mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr, &svc.currencySvcToken)
-	mustConnGRPC(ctx, &svc.productCatalogSvcConn, svc.productCatalogSvcAddr, &svc.productCatalogToken)
-	mustConnGRPC(ctx, &svc.cartSvcConn, svc.cartSvcAddr, &svc.cartSvcToken)
-	mustConnGRPC(ctx, &svc.recommendationSvcConn, svc.recommendationSvcAddr, &svc.recommendationSvcToken)
-	mustConnGRPC(ctx, &svc.shippingSvcConn, svc.shippingSvcAddr, &svc.shippingSvcToken)
-	mustConnGRPC(ctx, &svc.checkoutSvcConn, svc.checkoutSvcAddr, &svc.checkoutSvcToken)
-	mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr, &svc.adSvcToken)
+	mustConnGRPC(ctx, &svc.currencySvcConn, svc.currencySvcAddr, &svc.currencyAud, &svc.currencySvcToken)
+	mustConnGRPC(ctx, &svc.productCatalogSvcConn, svc.productCatalogSvcAddr, &svc.productCatalogAud, &svc.productCatalogToken)
+	mustConnGRPC(ctx, &svc.cartSvcConn, svc.cartSvcAddr, &svc.cartAud, &svc.cartSvcToken)
+	mustConnGRPC(ctx, &svc.recommendationSvcConn, svc.recommendationSvcAddr, &svc.recommendationAud, &svc.recommendationSvcToken)
+	mustConnGRPC(ctx, &svc.shippingSvcConn, svc.shippingSvcAddr, &svc.shippingAud, &svc.shippingSvcToken)
+	mustConnGRPC(ctx, &svc.checkoutSvcConn, svc.checkoutSvcAddr, &svc.checkoutAud, &svc.checkoutSvcToken)
+	mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr, &svc.adAud, &svc.adSvcToken)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", svc.homeHandler).Methods(http.MethodGet, http.MethodHead)
@@ -275,28 +282,17 @@ func mustMapEnv(target *string, envKey string) {
 }
 
 // see: https://cloud.google.com/run/docs/triggering/grpc#configuring_your_service_to_use_http2
-func mustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string, tok *string) {
+func mustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string, aud *string, tok **oauth2.Token) {
 	var err error
 	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
 
 	///////
 	// Extract audience
-	aud := "https://" + addr[:(strings.LastIndex(addr, ":"))] + "/"
-	tokenSource, err := idtoken.NewTokenSource(ctx, aud)
-	if err != nil {
-		log.Errorf("idtoken.NewTokenSource: %v", err)
-		return
-	}
-	token, err := tokenSource.Token()
-	if err != nil {
-		log.Errorf("TokenSource.Token: %v", err)
-		return
-	}
-	log.Infof("token -> %s", token.AccessToken)
-	// Add token to gRPC Request.
-	// ctx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token.AccessToken)
-	*tok = token.AccessToken
+	*aud = "https://" + addr[:(strings.LastIndex(addr, ":"))] + "/"
+
+	tkstr := VFToken(*aud, tok)
+	log.Infof("token -> %s", tkstr)
 
 	// Retrieve x509 cert
 	systemRoots, err := x509.SystemCertPool()

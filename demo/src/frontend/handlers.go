@@ -339,7 +339,7 @@ func (fe *frontendServer) placeOrderHandler(w http.ResponseWriter, r *http.Reque
 		ccCVV, _      = strconv.ParseInt(r.FormValue("credit_card_cvv"), 10, 32)
 	)
 
-	rtx := grpcMetadata.NewOutgoingContext(r.Context(), grpcMetadata.Pairs("Authorization", "Bearer "+fe.checkoutSvcToken))
+	rtx := grpcMetadata.NewOutgoingContext(r.Context(), grpcMetadata.Pairs("Authorization", "Bearer "+VFToken(fe.checkoutAud, &fe.checkoutSvcToken)))
 	order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).
 		PlaceOrder(rtx, &pb.PlaceOrderRequest{
 			Email: email,

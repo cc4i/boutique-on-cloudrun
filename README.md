@@ -19,3 +19,5 @@ Not supported:
 5. Refactor how gRPC call other services with authorization - https://cloud.google.com/run/docs/triggering/grpc
 
 6. To get the dns of Cloud Run service, must deploy first. In some cases your services depends on other services, you must deploy dependent services and then retrieve the dns of the service, and then update related parameters before deployment. 
+
+7. Be careful with identity toke, by default the token will be expired after 60 minutes, so we should find a proper mechanism to manage those indentity token, processing them in application should be straight forward. Or alternatively store them into redis and process accordingly. 
