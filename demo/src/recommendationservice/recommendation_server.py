@@ -38,7 +38,24 @@ from grpc_health.v1 import health_pb2_grpc
 from logger import getJSONLogger
 logger = getJSONLogger('recommendationservice-server')
 
+def check_and_refresh():
+    ####
+    # Method 2
+    global credentials
+    global product_catalog_stub
+    if credentials.expired:
+      request1 = google.auth.transport.requests.Request()
+      target_audience1 = "https://{}/".format(catalog_addr.partition(":")[0])
+      credentials = google.oauth2.id_token.fetch_id_token_credentials(target_audience1, request=request1)
+      credentials.refresh(request1)
+      id_token1 = credentials.token
 
+      tok1 = grpc.access_token_call_credentials(id_token1)
+      ccc1 = grpc.composite_channel_credentials(grpc.ssl_channel_credentials(), tok1)
+      channel1 = grpc.secure_channel(catalog_addr,ccc1)
+      product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(channel1)
+    ####
+    
 class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
     def ListRecommendations(self, request, context):
       try:
@@ -134,18 +151,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
             server.stop(0)
 
-def check_and_refresh():
-    ####
-    # Method 2
-    if credentials.expired:
-      request = google.auth.transport.requests.Request()
-      target_audience = "https://{}/".format(catalog_addr.partition(":")[0])
-      credentials = google.oauth2.id_token.fetch_id_token_credentials(target_audience, request=request)
-      credentials.refresh(request)
-      id_token = credentials.token
-
-      tok = grpc.access_token_call_credentials(id_token)
-      ccc = grpc.composite_channel_credentials(grpc.ssl_channel_credentials(), tok)
-      channel = grpc.secure_channel(catalog_addr,ccc)
-      product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(channel)
-    ####
