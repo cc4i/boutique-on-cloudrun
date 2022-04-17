@@ -32,6 +32,7 @@ from opencensus.common.transports.async_ import AsyncTransport
 import google.oauth2.id_token
 import google.auth.transport.requests
 import google.auth.transport.grpc
+# import google.auth.credentials.Credentials
 # from google.auth.transport import grpc as google_auth_transport_grpc
 
 import demo_pb2
@@ -72,6 +73,8 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
       try:
         logger.info("Entered into ListRecommendations()") 
         max_responses = 5
+        # Check token is expired or not
+        check_and_refresh()
         # fetch list of products from product catalog stub
         cat_response = product_catalog_stub.ListProducts(demo_pb2.Empty())
         product_ids = [x.id for x in cat_response.products]
@@ -154,20 +157,34 @@ if __name__ == "__main__":
         raise Exception('PRODUCT_CATALOG_SERVICE_ADDR environment variable not set')
     logger.info("product catalog address: " + catalog_addr)
     
-    ######
-    # !!!Changes!!!
-    credentials, _ = google.auth.default()
+    # ######
+    # # Method 1 !!!Changes!!!
+    # credentials, _ = google.auth.default()
+    # request = google.auth.transport.requests.Request()
+    # target_audience = "https://{}/".format(catalog_addr.partition(":")[0])
+    # id_token = google.oauth2.id_token.fetch_id_token(request, target_audience)
+    # # req.add_header("Authorization", f"Bearer {id_token}")
+    # tok = grpc.access_token_call_credentials(id_token)
+    # ccc = grpc.composite_channel_credentials(grpc.ssl_channel_credentials(), tok)
+
+    # channel = grpc.secure_channel(catalog_addr,ccc)
+
+    # product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(channel)
+    # #####
+
+    ####
+    # Method 2
     request = google.auth.transport.requests.Request()
     target_audience = "https://{}/".format(catalog_addr.partition(":")[0])
-    id_token = google.oauth2.id_token.fetch_id_token(request, target_audience)
-    # req.add_header("Authorization", f"Bearer {id_token}")
+    credentials = google.oauth2.id_token.fetch_id_token_credentials(target_audience, request=request)
+    credentials.refresh(request)
+    id_token = credentials.token
+
     tok = grpc.access_token_call_credentials(id_token)
     ccc = grpc.composite_channel_credentials(grpc.ssl_channel_credentials(), tok)
-
     channel = grpc.secure_channel(catalog_addr,ccc)
-    
     product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(channel)
-    #####
+    ####
 
     # create gRPC server
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10),
@@ -189,3 +206,19 @@ if __name__ == "__main__":
             time.sleep(10000)
     except KeyboardInterrupt:
             server.stop(0)
+
+def check_and_refresh():
+    ####
+    # Method 2
+    if credentials.expired:
+      request = google.auth.transport.requests.Request()
+      target_audience = "https://{}/".format(catalog_addr.partition(":")[0])
+      credentials = google.oauth2.id_token.fetch_id_token_credentials(target_audience, request=request)
+      credentials.refresh(request)
+      id_token = credentials.token
+
+      tok = grpc.access_token_call_credentials(id_token)
+      ccc = grpc.composite_channel_credentials(grpc.ssl_channel_credentials(), tok)
+      channel = grpc.secure_channel(catalog_addr,ccc)
+      product_catalog_stub = demo_pb2_grpc.ProductCatalogServiceStub(channel)
+    ####

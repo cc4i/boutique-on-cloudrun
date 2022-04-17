@@ -1,7 +1,17 @@
 #!/bin/sh
 
 # 0. Based environment variables
-export PROJECT_ID=play-with-anthos-340801
+if [ -z "${project_id}" ]
+then
+  echo "{project_id} is not defined."
+  exit 1
+fi
+if [ -z "${region}" ]
+then
+  echo "{region} is not defined."
+  exit 1
+fi
+export PROJECT_ID=${project_id}
 export REGION=${region}
 export SERVERLESS_CONNECTOR=vpc-connector-cloudrun
 
