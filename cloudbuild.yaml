@@ -8,7 +8,7 @@ steps:
     - 'pipefail'
     - '-c'
     - |-
-      cd demo && skaffold build
+      cd demo && skaffold build -f=skaffold.yaml
 
   - name: 'gcr.io/cloud-builders/gcloud'
     id: deploy-applications

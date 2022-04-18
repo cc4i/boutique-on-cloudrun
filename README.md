@@ -1,6 +1,20 @@
 # Boutique on Cloud Run
 
+The project is to demostrate how to migrate Kubernetes application into Cloud Run in order to leverage the power of serverless computing. The demo application was forked from https://github.com/GoogleCloudPlatform/microservices-demo with necessary changes.
+
 ## Thoughts about switch to Cloud Run
+### 1. Simplify the infrastruture
+Fully managed service and focus on application instead of underneath infrastructure. 
+
+### 2. Enhanced observerbility
+Distributed tracing is enabled by default.
+
+### 3. Built-in security
+Support https and IAM authentication by default.
+
+### 4. Better scalability
+Rapid scaling.
+
 
 ## What to change
 
