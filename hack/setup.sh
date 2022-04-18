@@ -3,24 +3,35 @@
 # 0. Based environment variables
 if [ -z "${project_id}" ]
 then
-  echo "{project_id} is not defined."
-  exit 1
+    echo "{project_id} is not defined."
+    exit 1
 fi
 if [ -z "${region}" ]
 then
-  echo "{region} is not defined."
-  exit 1
+    echo "{region} is not defined."
+    exit 1
+fi
+if [ -z "${vpc_network}" ]
+then
+    echo "{vpc_network} is not defined."
+    exit 1
 fi
 export PROJECT_ID=${project_id}
 export REGION=${region}
+export VPC_NETWORK=${vpc_network}
 export SERVERLESS_CONNECTOR=vpc-connector-cloudrun
+export INSTANCE_NAME=redis4cart
 
 # 1. Provision adjcent systems, such as Redis//
-# 1.1 Launch a Redis cluster if not existed
-export REDIS_HOST=`gcloud redis instances describe redis4cart --region ${region} --format="value('host')"`
-export REDIS_PORT=`gcloud redis instances describe redis4cart --region ${region} --format="value('port')"`
+# 1.1 Provision a Redis cluster if not existed
+./redis.sh ${REGION} ${INSTANCE_NAME}
+export REDIS_HOST=`gcloud redis instances describe ${INSTANCE_NAME} --region ${region} --format="value('host')"`
+export REDIS_PORT=`gcloud redis instances describe ${INSTANCE_NAME} --region ${region} --format="value('port')"`
 
-# 1.2 Build/Push image into Artifact Registry by skaffold & retrieve /image:tag/
+# 1.2 Provision VPC connector
+./vpc-connector.sh ${REGION} ${VPC_NETWORK} ${SERVERLESS_CONNECTOR}
+
+# 1.3 Build/Push image into Artifact Registry by skaffold & retrieve /image:tag/
 cd ../demo
 skaffold build
 for image in `skaffold build --dry-run --output='{{json .}}' --quiet |jq '.builds[].tag' -r`
@@ -71,8 +82,8 @@ do
 done
 cd -
 
-# 2. Launch services in Cloud Run / min 10
 
+# 2. Launch services in Cloud Run / min 10
 services="adservice cartservice checkoutservice currencyservice emailservice frontend paymentservice productcatalogservice recommendationservice shippingservice"
 region=${REGION}
 for svc in ${services[@]}
@@ -82,7 +93,6 @@ do
     gcloud run services replace /tmp/${svc}_rpl.yaml --region ${region}
 
 done
-
 
 
 # 3. Extract related pramameters and update launched services with right parameters.

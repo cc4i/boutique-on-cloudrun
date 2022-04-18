@@ -1,6 +1,12 @@
 # Boutique on Cloud Run
 
-## Notice
+## Thoughts about switch to Cloud Run
+
+## What to change
+
+## Expand to multi-region deployment
+
+## Notes
 1. Be careful some of features are not support in managed Cloud Run, but have support in Knative. Reason for that is to reduce cold start.
 
 Not supported:

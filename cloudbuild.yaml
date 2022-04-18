@@ -1,0 +1,33 @@
+steps:
+  # Provision clusters if need to
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: build-applications
+    entrypoint: 'bash'
+    args:
+    - '-eEuo'
+    - 'pipefail'
+    - '-c'
+    - |-
+      cd demo && skaffold build
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: deploy-applications
+    entrypoint: 'bash'
+    args:
+    - '-eEuo'
+    - 'pipefail'
+    - '-c'
+    - |-
+      export project_id=${PROJECT_ID}
+      export region=asia-east2
+      export vpc_network=custom-vpc-1
+      cd hack && ./setup.sh
+
+
+timeout: 7200s
+substitutions:
+    _MASTER_PIPELINE: m_pipeline
+    _WORKER_PIPELINE: w_pipeline
+options:
+  dynamicSubstitutions: true
+  substitution_option: 'ALLOW_LOOSE'
