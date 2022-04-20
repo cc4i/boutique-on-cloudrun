@@ -21,6 +21,7 @@ steps:
       export project_id=${PROJECT_ID}
       export region=asia-east2
       export vpc_network=custom-vpc-1
+      curl https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 > /bin/jq && chmod +x /bin/jq
       cd hack && ./setup.sh
 
 
