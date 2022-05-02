@@ -18,6 +18,15 @@ Rapid scaling.
 
 ## What to change
 
+1. Take out enssential content from YAML to create serving service.
+2. Configure parameters for each individual services.
+3. Configure service to service call with proper authentication. 
+4. Expose the public service.
+
+
+## How to deploy in a region
+
+
 ## Expand to multi-region deployment
 
 ## Notes
