@@ -21,7 +21,8 @@ Rapid scaling.
 1. Take out enssential content from YAML to create serving service.
 2. Configure parameters for each individual services.
 3. Configure service to service call with proper authentication. 
-4. Expose the public service.
+4. Expose the public service through GLB.
+
 
 
 ## How to deploy in a region
@@ -50,3 +51,6 @@ Not supported:
 6. To get the dns of Cloud Run service, must deploy first. In some cases your services depends on other services, you must deploy dependent services and then retrieve the dns of the service, and then update related parameters before deployment. 
 
 7. Be careful with identity toke, by default the token will be expired after 60 minutes, so we should find a proper mechanism to manage those indentity token, processing them in application should be straight forward. Or alternatively store them into redis and process accordingly. 
+
+
+
