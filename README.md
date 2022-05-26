@@ -27,6 +27,9 @@ Rapid scaling.
 
 ## How to deploy in a region
 
+```bash
+git clone 
+```
 
 ## Expand to multi-region deployment
 
