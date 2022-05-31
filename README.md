@@ -28,6 +28,7 @@ Rapid scaling.
 ## How to deploy in a region
 
 ```bash
+
 # 1. Prerequisite
 gcloud services enable 
 gcloud iam service-accounts
@@ -35,6 +36,7 @@ gcloud iam service-accounts
 # 2. Setup Botique on Cloud Run
 git clone git@github.com:cc4i/boutique-on-cloudrun.git
 cd boutique-on-cloudrun
+
 gcloud builds submit --config=cloudbuild.yaml --async
 
 ```
