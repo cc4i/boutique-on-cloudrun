@@ -1,4 +1,5 @@
 #!/bin/sh
+set -x 
 
 # 0. Based environment variables
 if [ -z "${project_id}" ]
@@ -86,15 +87,12 @@ do
     esac
 done
 cd -
+echo `pwd`
 
 
 # 3. Launch services in Cloud Run / min 10
 services="adservice cartservice checkoutservice currencyservice emailservice frontend paymentservice productcatalogservice recommendationservice shippingservice"
 region=${REGION}
-for svc in ${services[@]}
-do
-    echo ${svc}-${region}
-done
 for svc in ${services[@]}
 do
     echo "Install ${svc} into Cloud Run @ ${region} ..."
