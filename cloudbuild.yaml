@@ -10,8 +10,22 @@ steps:
     - |-
       cd demo && skaffold build -f=skaffold.yaml
 
+
   - name: 'gcr.io/cloud-builders/gcloud'
-    id: deploy-applications
+    id: provison-redis
+    entrypoint: 'bash'
+    args:
+    - '-eEuo'
+    - 'pipefail'
+    - '-c'
+    - |-
+      export region=${_CUSTOM_REGION}
+      export redis_instance_name=${_REDIS_INSTANCE_NAME}
+      cd hack && ./redis.sh ${region} ${redis_instance_name}
+
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: provision-serverless-connector
     entrypoint: 'bash'
     args:
     - '-eEuo'
@@ -19,15 +33,34 @@ steps:
     - '-c'
     - |-
       export project_id=${PROJECT_ID}
-      export region=asia-east2
-      export vpc_network=custom-vpc-1
+      export region=${_CUSTOM_REGION}
+      export vpc_network=${_VPC_NETWORK}
+      export serverless_connector=${_SERVERLESS_CONNECTOR}
+      cd hack && ./vpc-connector.sh ${region} ${vpc_network} ${serverless_connector}
+
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: deploy-applications2run
+    entrypoint: 'bash'
+    args:
+    - '-eEuo'
+    - 'pipefail'
+    - '-c'
+    - |-
+      export project_id=${PROJECT_ID}
+      export region=${_CUSTOM_REGION}
+      export vpc_network=${_VPC_NETWORK}
+      export serverless_connector=${_SERVERLESS_CONNECTOR}
+      export redis_instance_name=${_REDIS_INSTANCE_NAME}
       curl https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 > /bin/jq && chmod +x /bin/jq
-      cd hack && ./setup.sh
+      cd hack && ./deploy2run.sh
 
 timeout: 7200s
 substitutions:
-    _MASTER_PIPELINE: m_pipeline
-    _WORKER_PIPELINE: w_pipeline
+    _CUSTOM_REGION: asia-east2
+    _VPC_NETWORK: custom-vpc-1
+    _REDIS_INSTANCE_NAME: redis4cart
+    _SERVERLESS_CONNECTOR: vpc-connector-cloudrun
 options:
   dynamicSubstitutions: true
   substitution_option: 'ALLOW_LOOSE'

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 export REGION=$1
-export VPC_NETWORK= $2
+export VPC_NETWORK=$2
 export SERVERLESS_CONNECTOR=$3
 
 if [ -z "${REGION}" ]
