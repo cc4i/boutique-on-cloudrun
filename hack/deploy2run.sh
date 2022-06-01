@@ -1,5 +1,5 @@
 #!/bin/sh
-set -x 
+set -v 
 
 # 0. Based environment variables
 if [ -z "${project_id}" ]
@@ -37,12 +37,12 @@ export REDIS_INSTANCE_NAME=${redis_instance_name}
 export REDIS_HOST=`gcloud redis instances describe ${REDIS_INSTANCE_NAME} --region ${region} --format="value('host')"`
 export REDIS_PORT=`gcloud redis instances describe ${REDIS_INSTANCE_NAME} --region ${region} --format="value('port')"`
 
-2. Build/Push image into Artifact Registry by skaffold & retrieve /image:tag/
+# 2. Build/Push image into Artifact Registry by skaffold & retrieve /image:tag/
 cd ../demo
 skaffold build
 for image in `skaffold build --dry-run --output='{{json .}}' --quiet |jq '.builds[].tag' -r`
 do 
-    
+    echo ${image}
     case ${image} in
         *emailservice*)
             export emailservice="${image}"
