@@ -92,7 +92,6 @@ echo `pwd`
 
 # 3. Launch services in Cloud Run / min 10
 run_services="adservice cartservice checkoutservice currencyservice emailservice frontend paymentservice productcatalogservice recommendationservice shippingservice"
-region=${REGION}
 for svc in ${run_services[@]}
 do
     echo "Install ${svc} into Cloud Run @ ${region} ..."
