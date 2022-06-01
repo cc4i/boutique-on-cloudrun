@@ -93,6 +93,10 @@ services="adservice cartservice checkoutservice currencyservice emailservice fro
 region=${REGION}
 for svc in ${services[@]}
 do
+    echo ${svc}-${region}
+done
+for svc in ${services[@]}
+do
     echo "Install ${svc} into Cloud Run @ ${region} ..."
     ( echo "cat <<EOF" ; cat ../manifests/${svc}.yaml; echo EOF ) |sh > /tmp/${svc}_rpl.yaml
     gcloud run services replace /tmp/${svc}_rpl.yaml --region ${region}
