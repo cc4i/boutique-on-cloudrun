@@ -38,61 +38,61 @@ export REDIS_HOST=`gcloud redis instances describe ${REDIS_INSTANCE_NAME} --regi
 export REDIS_PORT=`gcloud redis instances describe ${REDIS_INSTANCE_NAME} --region ${region} --format="value('port')"`
 
 # 2. Build/Push image into Artifact Registry by skaffold & retrieve /image:tag/
-cd ../demo
-skaffold build
-for image in `skaffold build --dry-run --output='{{json .}}' --quiet |jq '.builds[].tag' -r`
-do 
+# cd ../demo
+# skaffold build
+# for image in `skaffold build --dry-run --output='{{json .}}' --quiet |jq '.builds[].tag' -r`
+# do 
     
-    case ${image} in
-        *emailservice*)
-            export emailservice="${image}"
-            echo ${emailservice}
-            ;;
-        *productcatalogservice*)
-            export productcatalogservice="${image}"
-            echo ${productcatalogservice}
-            ;;
-        *recommendationservice*)
-            export recommendationservice="${image}"
-            echo ${recommendationservice}
-            ;;
-        *shippingservice*)
-            export shippingservice="${image}"
-            echo ${shippingservice}
-            ;;
-        *checkoutservice*)
-            export checkoutservice="${image}"
-            echo ${checkoutservice}
-            ;;
-        *paymentservice*)
-            export paymentservice="${image}"
-            echo ${paymentservice}
-            ;;
-        *currencyservice*)
-            export currencyservice="${image}"
-            echo ${currencyservice}
-            ;;
-        *cartservice*)
-            export cartservice="${image}"
-            echo ${cartservice}
-            ;;
-        *frontend*)
-            export frontend="${image}"
-            echo ${frontend}
-            ;;
-        *adservice*)
-            export adservice="${image}"
-            echo ${adservice}
-            ;;
-    esac
-done
-cd -
-echo `pwd`
+#     case ${image} in
+#         *emailservice*)
+#             export emailservice="${image}"
+#             echo ${emailservice}
+#             ;;
+#         *productcatalogservice*)
+#             export productcatalogservice="${image}"
+#             echo ${productcatalogservice}
+#             ;;
+#         *recommendationservice*)
+#             export recommendationservice="${image}"
+#             echo ${recommendationservice}
+#             ;;
+#         *shippingservice*)
+#             export shippingservice="${image}"
+#             echo ${shippingservice}
+#             ;;
+#         *checkoutservice*)
+#             export checkoutservice="${image}"
+#             echo ${checkoutservice}
+#             ;;
+#         *paymentservice*)
+#             export paymentservice="${image}"
+#             echo ${paymentservice}
+#             ;;
+#         *currencyservice*)
+#             export currencyservice="${image}"
+#             echo ${currencyservice}
+#             ;;
+#         *cartservice*)
+#             export cartservice="${image}"
+#             echo ${cartservice}
+#             ;;
+#         *frontend*)
+#             export frontend="${image}"
+#             echo ${frontend}
+#             ;;
+#         *adservice*)
+#             export adservice="${image}"
+#             echo ${adservice}
+#             ;;
+#     esac
+# done
+# cd -
+# echo `pwd`
 
 
 # 3. Launch services in Cloud Run / min 10
 run_services="adservice cartservice checkoutservice currencyservice emailservice frontend paymentservice productcatalogservice recommendationservice shippingservice"
-for svc in ${run_services[@]}
+for svc in `echo ${run_services}`
 do
     echo "Install ${svc} into Cloud Run @ ${region} ..."
     ( echo "cat <<EOF" ; cat ../manifests/${svc}.yaml; echo EOF ) |sh > /tmp/${svc}_rpl.yaml
