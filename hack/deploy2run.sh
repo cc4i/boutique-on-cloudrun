@@ -91,13 +91,14 @@ echo `pwd`
 
 
 # 3. Launch services in Cloud Run / min 10
-services="adservice cartservice checkoutservice currencyservice emailservice frontend paymentservice productcatalogservice recommendationservice shippingservice"
+run_services="adservice cartservice checkoutservice currencyservice emailservice frontend paymentservice productcatalogservice recommendationservice shippingservice"
 region=${REGION}
-for svc in ${services[@]}
+for svc in ${run_services[@]}
 do
     echo "Install ${svc} into Cloud Run @ ${region} ..."
     ( echo "cat <<EOF" ; cat ../manifests/${svc}.yaml; echo EOF ) |sh > /tmp/${svc}_rpl.yaml
     gcloud run services replace /tmp/${svc}_rpl.yaml --region ${region}
+    rm -f /tmp/${svc}_rpl.yaml
 
 done
 
