@@ -52,7 +52,7 @@ steps:
       export vpc_network=${_VPC_NETWORK}
       export serverless_connector=${_SERVERLESS_CONNECTOR}
       export redis_instance_name=${_REDIS_INSTANCE_NAME}
-      curl https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 > /bin/jq && chmod +x /bin/jq
+      curl -L https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 > /bin/jq && chmod +x /bin/jq
       cd hack && ./deploy2run.sh
 
 timeout: 7200s

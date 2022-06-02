@@ -1,5 +1,5 @@
 #!/bin/sh
-set -v 
+set -x 
 
 # 0. Based environment variables
 if [ -z "${project_id}" ]
