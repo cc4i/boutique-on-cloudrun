@@ -155,4 +155,7 @@ gcloud run services replace /tmp/recommendationservice_rpl.yaml --region ${regio
 
 
 # 6. Add 'allUsers' permission for frontend service to enable public assess.
-
+gcloud run services add-iam-policy-binding frontend \
+    --member=allUsers \
+    --role=roles/run.invoker \
+    --region=${region}
