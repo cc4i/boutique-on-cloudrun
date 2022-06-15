@@ -25,7 +25,7 @@ Rapid scaling.
 
 
 
-## How to deploy in a region
+## Deploy into Managed Cloud Run
 
 ```bash
 
@@ -40,6 +40,45 @@ cd boutique-on-cloudrun
 gcloud builds submit --config=cloudbuild.yaml --async
 
 ```
+
+## Deploy into Cloud Run on GKE
+```bash
+
+gcloud container fleet cloudrun enable
+
+# Provision GKE
+gcloud beta container --project ${PROJECT_ID} clusters create ${CLUSTER} \
+    --zone ${ZONE} \
+    --machine-type "n2d-standard-4" \
+    --scopes "https://www.googleapis.com/auth/cloud-platform" \
+    --num-nodes "3" \
+    --enable-ip-alias \
+    --enable-dataplane-v2 \
+    --workload-pool "${PROJECT_ID}.svc.id.goog" \
+    --node-locations ${ZONE}
+
+
+# Run following commands in CloudShell
+curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.13 > asmcli
+mkdir bin
+./asmcli install \
+  --project_id play-with-anthos-340801 \
+  --cluster_name cloudrun-on-gke \
+  --cluster_location asia-east2-b \
+  --fleet_id play-with-anthos-340801 \
+  --output_dir ~/bin \
+  --enable_all \
+  --ca mesh_ca
+# 
+
+# Apply Cloud Run to GKE
+gcloud config set run/platform gke
+gcloud config set run/cluster_location ${ZONE}
+gcloud container fleet cloudrun apply --gke-cluster=${ZONE}/${CLUSTER}
+
+
+```
+
 
 ## Expand to multi-region deployment
 
