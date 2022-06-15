@@ -42,21 +42,46 @@ gcloud builds submit --config=cloudbuild.yaml --async
 ```
 
 ## Deploy into Cloud Run on GKE
+
 ```bash
 
+export PROJECT_ID=play-with-anthos-340801
+export CLUSTER=cloudrun-gke
+export ZONE=asia-east2-b
+
 # Provision GKE
-gcloud container clusters --project ${PROJECT_ID} create ${CLUSTER} \
-    --addons=HttpLoadBalancing,CloudRun \
-    --machine-type=n2d-standard-4 \
-    --workload-pool "${PROJECT_ID}.svc.id.goog" \
+gcloud container --project ${PROJECT_ID} clusters create ${CLUSTER} \
+    --machine-type "n2d-standard-4" \
     --scopes "https://www.googleapis.com/auth/cloud-platform" \
-    --zone=us-central1-a
+    --num-nodes "3" \
+    --workload-pool "${PROJECT_ID}.svc.id.goog" \
+    --zone ${ZONE}
+
 
 # Register into Fleet
-gcloud container fleet cloudrun enable
-gcloud container fleet memberships register ${CLUSTER} \
-    --gke-cluster=us-central1-a/${CLUSTER} \
-    --enable-workload-identity
+# gcloud container fleet memberships register ${CLUSTER} \
+#  --gke-cluster=${ZONE}/${CLUSTER} \
+#  --enable-workload-identity
+
+# Run following commands in CloudShell
+mkdir bin;cd bin
+curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.13 > asmcli
+chmod +x asmcli
+./asmcli install \
+  --project_id ${PROJECT_ID} \
+  --cluster_name ${CLUSTER} \
+  --cluster_location ${ZONE} \
+  --fleet_id ${PROJECT_ID} \
+  --output_dir ~/bin \
+  --enable_all \
+  --ca mesh_ca
+# 
+
+# Apply Cloud Run to GKE
+# gcloud config set run/platform gke
+# gcloud config set run/cluster_location ${ZONE}
+gcloud container fleet cloudrun apply --gke-cluster=${ZONE}/${CLUSTER}
+
 
 ```
 
