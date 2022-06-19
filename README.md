@@ -115,7 +115,7 @@ displayName: [NAME]
 ```
 
 
-2. Setting up a glolab external HTTPs load balancer with a Cloud Run Service.
+3. Setting up a glolab external HTTPs load balancer with a Cloud Run Service.
 
 ```bash
 
@@ -165,14 +165,14 @@ gcloud compute forwarding-rules create ${HTTPS_FORWARDING_RULE_NAME} \
   --ports=443
 ```
     
-3. Connect domain name to load blanacer by add A record into your doamin management. For instance:
+4. Connect domain name to load blanacer by add A record into your doamin management. For instance:
 
 ```
 NAME                  TYPE     DATA
 run                   A        30.90.80.100
 ```
 
-4. Enable IAP globally with following commands. 
+5. Enable IAP globally with following commands. 
 
 ```bash
 
