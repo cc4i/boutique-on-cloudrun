@@ -2,16 +2,18 @@
 
 The project is to demostrate how to migrate Kubernetes application into Cloud Run in order to leverage the power of serverless computing. The demo application was forked from https://github.com/GoogleCloudPlatform/microservices-demo with necessary changes.
 
+
 ## Thoughts about switch to Cloud Run
-> 1. Simplify the management of infrastruture, focus on applications instead of underneath infrastructure. 
 
-> 2. Automated scalability & scale to zero.
+- Simplify the management of infrastruture, focus on applications instead of underneath infrastructure. 
 
-> 3. Enhanced observerbility by default, such as metrics, trace, audit logs, etc.
+- Automated scalability & scale to zero.
 
-> 4. Built-in security, support https by default, Binary authentication, IAM, integration with IAP, etc.
+- Enhanced observerbility by default, such as metrics, trace, audit logs, etc.
 
-> 5. Support serverless on-premises.
+- Built-in security, support https by default, Binary authentication, IAM, integration with IAP, etc.
+
+- Support serverless on-premises.
 
 
 
@@ -186,12 +188,23 @@ gcloud compute ssl-certificates create ${SSL_CERTIFICATE_NAME} \
     --domains ${DOMAIN}
 ```
 
-Note that this configuration allows all clients that are considered internal (per definition in Restricting ingress for Cloud Run) to access the Cloud Run service without authenticating. All other clients coming in through the external load balancer authenticate through IAP. This is a known limitation that will be addressed in the future.
+### Notes for IAP: 
+- This configuration allows all clients that are considered internal (per definition in Restricting ingress for Cloud Run) to access the Cloud Run service without authenticating. All other clients coming in through the external load balancer authenticate through IAP. This is a known limitation that will be addressed in the future.
+
+- In [Indetity-Aware Proxy](https://console.cloud.google.com/security/iap) page to choose external identities for authorization and using [generated sign-in page](https://cloud.google.com/iap/docs/cloud-run-sign-in?_ga=2.69658834.-352041230.1644724472) or providing your [own](https://cloud.google.com/iap/docs/using-firebaseui?_ga=2.70232146.-352041230.1644724472). You must choose one of [identity providers](https://console.cloud.google.com/customer-identity/providers) with proper configuration.
+
+>For example, choose service in "HTTP RESOURCES" tab under [Indetity-Aware Proxy](https://console.cloud.google.com/security/iap) page, then click "START":
+>>![external identities](./hack/ei-console.png)
+
 
 ## Expand to multi-region deployment
+```
+TODO
+```
 
-## Notes
-1. Be careful some of features are not support in managed Cloud Run, but have support in Knative. Reason for that is to reduce cold start.
+## Notes for Cloud Run
+
+>1. Be careful some of features are not support in managed Cloud Run, but have support in Knative. Reason for that is to reduce cold start.
 
 Not supported:
 ```
@@ -200,17 +213,17 @@ Not supported:
 ```
 
 
-2. cpu < 1 is not supported with concurrency > 1
+>2. cpu < 1 is not supported with concurrency > 1
 
-3. Not support to inject evironments, such as "PORT" (due to conflict with system auto-injection)
+>3. Not support to inject evironments, such as "PORT" (due to conflict with system auto-injection)
 
-4. Services access other services on Cloud Run must be authorized, which has to provide identity token.
+>4. Services access other services on Cloud Run must be authorized, which has to provide identity token.
 
-5. Refactor how gRPC call other services with authorization - https://cloud.google.com/run/docs/triggering/grpc
+>5. Refactor how gRPC call other services with authorization - https://cloud.google.com/run/docs/triggering/grpc
 
-6. To get the dns of Cloud Run service, must deploy first. In some cases your services depends on other services, you must deploy dependent services and then retrieve the dns of the service, and then update related parameters before deployment. 
+>6. To get the dns of Cloud Run service, must deploy first. In some cases your services depends on other services, you must deploy dependent services and then retrieve the dns of the service, and then update related parameters before deployment. 
 
-7. Be careful with identity toke, by default the token will be expired after 60 minutes, so we should find a proper mechanism to manage those indentity token, processing them in application should be straight forward. Or alternatively store them into redis and process accordingly. 
+>7. Be careful with identity toke, by default the token will be expired after 60 minutes, so we should find a proper mechanism to manage those indentity token, processing them in application should be straight forward. Or alternatively store them into redis and process accordingly. 
 
 
 
